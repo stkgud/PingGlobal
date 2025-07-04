@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全球服务器Ping监控</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <i class="bi bi-globe"></i> 全球服务器Ping监控
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" @click="activeTab = 'dashboard'">
+                                <i class="bi bi-speedometer2"></i> 仪表盘
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" @click="activeTab = 'matrix'">
+                                <i class="bi bi-grid-3x3"></i> 矩阵视图
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" @click="activeTab = 'servers'">
+                                <i class="bi bi-server"></i> 服务器管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" @click="activeTab = 'settings'">
+                                <i class="bi bi-gear"></i> 设置
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="navbar-text text-light me-2">
+                    <span v-if="pingStatus">
+                        <i class="bi bi-activity text-success"></i> 监控运行中
+                    </span>
+                    <span v-else>
+                        <i class="bi bi-stop-circle text-danger"></i> 监控已停止
+                    </span>
+                </div>
+                <div class="navbar-text text-light">
+                    <span>{{ currentTime }}</span>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid mt-3">
+            <div class="alert alert-info" v-if="loading">
+                <i class="bi bi-arrow-repeat spinner"></i> 正在加载数据...
+            </div>
+
+            <div class="alert alert-danger" v-if="error">
+                <i class="bi bi-exclamation-triangle"></i> {{ error }}
+            </div>
+
+            <!-- 仪表盘视图 -->
+            <div v-if="activeTab === 'dashboard'" class="dashboard">
+                <div class="row">
+                    <div class="col-md-6 col-lg-3 mb-3" v-for="server in servers" :key="server.id">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                {{ server.name }}
+                            </div>
+                            <div class="card-body">
+                                <p><strong>ID:</strong> {{ server.id }}</p>
+                                <p><strong>IPv4:</strong> {{ server.ipv4 || '无' }}</p>
+                                <p><strong>IPv6:</strong> {{ server.ipv6 || '无' }}</p>
+                                <div class="ping-stats">
+                                    <h6>平均响应时间:</h6>
+                                    <div v-if="getAverageLatency(server.id).ipv4 !== null">
+                                        <span class="badge bg-info">IPv4: {{ getAverageLatency(server.id).ipv4.toFixed(2) }} ms</span>
+                                    </div>
+                                    <div v-if="getAverageLatency(server.id).ipv6 !== null">
+                                        <span class="badge bg-success">IPv6: {{ getAverageLatency(server.id).ipv6.toFixed(2) }} ms</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 矩阵视图 -->
+            <div v-if="activeTab === 'matrix'" class="matrix-view">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">服务器延迟矩阵</h5>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" v-model="showIPv6" id="ipv6Switch">
+                                <label class="form-check-label" for="ipv6Switch">显示IPv6</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover ping-matrix">
+                                <thead>
+                                    <tr>
+                                        <th>源 \ 目标</th>
+                                        <th v-for="server in servers" :key="server.id">{{ server.name }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="source in servers" :key="source.id">
+                                        <th>{{ source.name }}</th>
+                                        <td v-for="target in servers" :key="target.id" 
+                                            :class="getCellClass(source.id, target.id)">
+                                            <div v-if="pingResults && pingResults.data && pingResults.data[source.id] && pingResults.data[source.id][target.id]">
+                                                <div v-if="!showIPv6 && pingResults.data[source.id][target.id].ipv4">
+                                                    <span v-if="pingResults.data[source.id][target.id].ipv4.status === 'success'">
+                                                        {{ pingResults.data[source.id][target.id].ipv4.latency.toFixed(2) }} ms
+                                                    </span>
+                                                    <span v-else-if="pingResults.data[source.id][target.id].ipv4.status === 'self'">
+                                                        -
+                                                    </span>
+                                                    <span v-else class="text-danger">
+                                                        {{ pingResults.data[source.id][target.id].ipv4.status }}
+                                                    </span>
+                                                </div>
+                                                <div v-if="showIPv6 && pingResults.data[source.id][target.id].ipv6">
+                                                    <span v-if="pingResults.data[source.id][target.id].ipv6.status === 'success'">
+                                                        {{ pingResults.data[source.id][target.id].ipv6.latency.toFixed(2) }} ms
+                                                    </span>
+                                                    <span v-else-if="pingResults.data[source.id][target.id].ipv6.status === 'self'">
+                                                        -
+                                                    </span>
+                                                    <span v-else class="text-danger">
+                                                        {{ pingResults.data[source.id][target.id].ipv6.status }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div v-else>N/A</div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 服务器管理 -->
+            <div v-if="activeTab === 'servers'" class="servers-management">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">服务器管理</h5>
+                            <button class="btn btn-primary btn-sm" @click="addNewServer">
+                                <i class="bi bi-plus-circle"></i> 添加服务器
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>名称</th>
+                                        <th>IPv4</th>
+                                        <th>IPv6</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(server, index) in editableServers" :key="index">
+                                        <td>
+                                            <input type="text" class="form-control" v-model="server.id" :disabled="!server.isNew">
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control" v-model="server.name">
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control" v-model="server.ipv4" placeholder="例如: 8.8.8.8">
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control" v-model="server.ipv6" placeholder="例如: 2001:4860:4860::8888">
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-danger btn-sm me-2" @click="removeServer(index)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-success" @click="saveServers">
+                                <i class="bi bi-save"></i> 保存更改
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 设置 -->
+            <div v-if="activeTab === 'settings'" class="settings">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">系统设置</h5>
+                    </div>
+                    <div class="card-body">
+                        <form @submit.prevent="saveSettings">
+                            <div class="mb-3">
+                                <label class="form-label">Ping间隔 (秒)</label>
+                                <input type="number" class="form-control" v-model.number="config.ping_interval" min="10">
+                                <div class="form-text">服务器之间执行ping测试的时间间隔</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Ping次数</label>
+                                <input type="number" class="form-control" v-model.number="config.ping_count" min="1" max="20">
+                                <div class="form-text">每次测试发送的ping包数量</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">超时时间 (秒)</label>
+                                <input type="number" class="form-control" v-model.number="config.timeout" min="1" max="30">
+                                <div class="form-text">每次ping请求的超时时间</div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-save"></i> 保存设置
+                                </button>
+                                <button type="button" class="btn btn-success" @click="startPing" :disabled="pingStatus">
+                                    <i class="bi bi-play-fill"></i> 启动监控
+                                </button>
+                                <button type="button" class="btn btn-danger" @click="stopPing" :disabled="!pingStatus">
+                                    <i class="bi bi-stop-fill"></i> 停止监控
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.31/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

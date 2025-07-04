@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: ping_global_backend
+    restart: unless-stopped
+    volumes:
+      - ./backend:/app
+      - ping_data:/app/data
+    ports:
+      - "5000:5000"
+    networks:
+      - ping_network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: ping_global_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - ping_network
+
+networks:
+  ping_network:
+    driver: bridge
+
+volumes:
+  ping_data:

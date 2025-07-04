@@ -1,0 +1,10 @@
+FROM nginx:alpine
+
+# 复制前端文件到Nginx服务目录
+COPY frontend/ /usr/share/nginx/html/
+
+# 暴露端口
+EXPOSE 80
+
+# 使用默认的Nginx配置启动
+CMD ["nginx", "-g", "daemon off;"]

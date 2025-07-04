@@ -1,0 +1,68 @@
+/* 全局样式 */
+body {
+    background-color: #f8f9fa;
+}
+
+.spinner {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 导航栏样式 */
+.navbar-brand i {
+    margin-right: 8px;
+}
+
+/* 仪表盘样式 */
+.dashboard .card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+}
+
+.dashboard .card:hover {
+    transform: translateY(-5px);
+}
+
+.ping-stats {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+}
+
+/* 矩阵视图样式 */
+.ping-matrix th, .ping-matrix td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.ping-matrix th {
+    background-color: #f8f9fa;
+}
+
+.cell-success {
+    background-color: #d1e7dd;
+}
+
+.cell-warning {
+    background-color: #fff3cd;
+}
+
+.cell-danger {
+    background-color: #f8d7da;
+}
+
+.cell-self {
+    background-color: #e2e3e5;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .navbar-text {
+        display: none;
+    }
+}
