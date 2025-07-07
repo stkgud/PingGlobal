@@ -14,6 +14,8 @@ services:
       - "4888:4888"
     networks:
       - ping_network
+    environment:
+      - PYTHONUNBUFFERED=1
 
   frontend:
     build:

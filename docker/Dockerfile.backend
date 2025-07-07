@@ -18,4 +18,4 @@ COPY backend/ .
 EXPOSE 4888
 
 # 启动应用
-CMD ["gunicorn", "--bind", "0.0.0.0:4888", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:4888", "--log-level", "debug", "app:app"]
