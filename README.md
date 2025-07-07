@@ -36,7 +36,7 @@ docker-compose up -d
 
 3. 访问Web界面：
 
-打开浏览器，访问 `http://localhost`
+打开浏览器，访问 `http://localhost:4887`
 
 ### 手动启动（开发模式）
 
