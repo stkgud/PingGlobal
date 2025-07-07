@@ -1,4 +1,4 @@
-#!/bin/bash
+f#!/bin/bash
 
 echo "正在修复PingGlobal前端服务..."
 

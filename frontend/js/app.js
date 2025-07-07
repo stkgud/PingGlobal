@@ -1,5 +1,5 @@
 // 全局API基础URL
-const API_BASE_URL = 'http://localhost:4888/api';
+const API_BASE_URL = 'https://api-ping.nimangba.com/api';
 
 // Vue应用
 const app = Vue.createApp({

@@ -7,8 +7,11 @@ import threading
 import socket
 import ipaddress
 from datetime import datetime
+from flask_cors import CORS
 
 app = Flask(__name__)
+# 配置CORS，允许来自前端域名的请求
+CORS(app, resources={r"/api/*": {"origins": ["https://ping.nimangba.com", "http://localhost:4887"]}})
 
 # 配置文件路径
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
