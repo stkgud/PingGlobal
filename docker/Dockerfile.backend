@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ .
 
 # 暴露端口
-EXPOSE 5000
+EXPOSE 4888
 
 # 启动应用
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:4888", "app:app"]

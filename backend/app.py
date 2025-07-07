@@ -271,4 +271,4 @@ def add_cors_headers(response):
 if __name__ == '__main__':
     # 启动时自动开始ping
     start_ping_thread()
-    app.run(host='0.0.0.0', port=5000, debug=True) 
+    app.run(host='0.0.0.0', port=4888, debug=True) 

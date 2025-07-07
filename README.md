@@ -59,6 +59,8 @@ python -m http.server 8080
 
 然后访问 `http://localhost:8080`
 
+注意：后端API将在 `http://localhost:4888` 上运行
+
 ## 配置服务器
 
 1. 在Web界面中，点击"服务器管理"标签

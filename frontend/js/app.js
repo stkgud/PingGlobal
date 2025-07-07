@@ -1,5 +1,5 @@
 // 全局API基础URL
-const API_BASE_URL = 'http://localhost:5000/api';
+5const API_BASE_URL = 'http://localhost:4888/api';
 
 // Vue应用
 const app = Vue.createApp({
